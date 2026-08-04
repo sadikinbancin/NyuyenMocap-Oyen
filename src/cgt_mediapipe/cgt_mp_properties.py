@@ -111,6 +111,7 @@ class MP_PG_Properties(bpy.types.PropertyGroup):
         default=False
     )
 
+<<<<<<< HEAD
     debug_leveling: bpy.props.BoolProperty(
         name="Debug Leveling",
         description="Imprime en la consola de Blender el ángulo de corrección "
@@ -152,6 +153,8 @@ class MP_PG_Properties(bpy.types.PropertyGroup):
         default=0.85, min=0.0, max=1.0, subtype='FACTOR'
     )
 
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
     local_user: bpy.props.BoolProperty(
         name="Local user",
         description="Install to local user and not to blenders python site packages.",

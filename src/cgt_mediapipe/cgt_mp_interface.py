@@ -68,6 +68,7 @@ class CGT_PT_MP_DetectorProperties(cgt_core_panel.DefaultPanel, bpy.types.Panel)
         layout.row().prop(user, "min_detection_confidence", slider=True)
 
 
+<<<<<<< HEAD
 class CGT_PT_MP_Leveling(cgt_core_panel.DefaultPanel, bpy.types.Panel):
     bl_label = "Nivelado de cámara"
     bl_parent_id = "UI_PT_CGT_Detection"
@@ -119,6 +120,8 @@ class CGT_PT_MP_Smoothing(cgt_core_panel.DefaultPanel, bpy.types.Panel):
         col.row().label(text="Más alto = menos jitter, pero más lag.", icon='INFO')
 
 
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 class CGT_PT_MP_Warning(cgt_core_panel.DefaultPanel, bpy.types.Panel):
     bl_label = "Mediapipe"
     bl_parent_id = "UI_PT_CGT_Panel"
@@ -145,9 +148,13 @@ class CGT_PT_MP_Warning(cgt_core_panel.DefaultPanel, bpy.types.Panel):
 classes = [
     CGT_PT_MP_Warning,
     CGT_PT_MP_Detection,
+<<<<<<< HEAD
     CGT_PT_MP_DetectorProperties,
     CGT_PT_MP_Leveling,
     CGT_PT_MP_Smoothing,
+=======
+    CGT_PT_MP_DetectorProperties
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 ]
 
 

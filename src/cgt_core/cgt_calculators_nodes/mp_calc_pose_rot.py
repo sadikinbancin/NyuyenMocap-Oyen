@@ -1,7 +1,11 @@
 import numpy as np
 from mathutils import Euler
 from typing import List
+<<<<<<< HEAD
 from . import calc_utils, cgt_math, cgt_leveling, cgt_smoothing
+=======
+from . import calc_utils, cgt_math
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 from ..cgt_patterns import cgt_nodes
 
 
@@ -16,7 +20,10 @@ class PoseRotationCalculator(cgt_nodes.CalculatorNode, calc_utils.ProcessorUtils
         self.shoulder_center = calc_utils.CustomData(34)
         self.pose_offset = calc_utils.CustomData(35)
         self.hip_center = calc_utils.CustomData(33)
+<<<<<<< HEAD
         self.smoother = cgt_smoothing.LandmarkSmoother()
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 
     def update(self, data: List, frame: int=-1):
         """ Apply the processed data to references. """
@@ -156,6 +163,7 @@ class PoseRotationCalculator(cgt_nodes.CalculatorNode, calc_utils.ProcessorUtils
         self.data.append([self.hip_center.idx, self.hip_center.loc])
 
     def prepare_landmarks(self):
+<<<<<<< HEAD
         """ Prepare landmark orientation, then corrige el sesgo de nivelado
         de cámara ANTES de que cualquier otro método toque self.data.
         Como todo lo demás (posiciones que alimentan los drivers CHAIN de
@@ -179,6 +187,12 @@ class PoseRotationCalculator(cgt_nodes.CalculatorNode, calc_utils.ProcessorUtils
 
         self.data = self.smoother.smooth(self.data)
 
+=======
+        """ Prepare landmark orientation. """
+        self.data = [[idx, np.array([-landmark[0], landmark[2], -landmark[1]])]
+                     for idx, landmark in self.data]
+
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
     def set_hip_as_origin(self):
         self.pose_offset.loc = self.hip_center.loc
         self.data = [[idx, np.array([landmark[0] - self.hip_center.loc[0],

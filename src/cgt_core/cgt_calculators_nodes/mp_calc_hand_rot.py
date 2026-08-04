@@ -1,5 +1,9 @@
 import numpy as np
+<<<<<<< HEAD
 from . import calc_utils, cgt_math, cgt_leveling
+=======
+from . import calc_utils, cgt_math
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 from ..cgt_patterns import cgt_nodes
 
 
@@ -227,6 +231,7 @@ class HandRotationCalculator(cgt_nodes.CalculatorNode, calc_utils.ProcessorUtils
     @staticmethod
     def set_global_origin(data):
         """ Sets the wrist to (0, 0, 0) while the wrist is the origin of the fingers.
+<<<<<<< HEAD
             Changes the x-y-z order to match blenders coordinate system.
             Aplica la misma corrección de nivelado de cámara que mp_calc_pose_rot.py
             (comparten cgt_leveling.LEVELING) — las manos no tienen forma propia
@@ -236,12 +241,18 @@ class HandRotationCalculator(cgt_nodes.CalculatorNode, calc_utils.ProcessorUtils
             resultado es equivalente a corregir los vectores ya relativos a la
             muñeca. Si no hubo datos de pose (modo solo-manos), LEVELING queda
             en 'off' y esto es un no-op. """
+=======
+            Changes the x-y-z order to match blenders coordinate system. """
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
         if data is None or len(data) == 0:
             return data
 
         if len(data) > 0:
             data = [[idx, np.array([-landmark[0], landmark[2], -landmark[1]])] for idx, landmark in data[0]]
+<<<<<<< HEAD
             data = cgt_leveling.LEVELING.apply(data)
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
             data = [[idx, landmark - data[0][1]] for idx, landmark in data]
 
         return data

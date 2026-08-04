@@ -3,7 +3,10 @@ import logging
 from typing import Optional
 from pathlib import Path
 from ..cgt_core.cgt_patterns import cgt_nodes
+<<<<<<< HEAD
 from ..cgt_core.cgt_calculators_nodes import cgt_leveling
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 
 
 class WM_CGT_MP_modal_detection_operator(bpy.types.Operator):
@@ -64,6 +67,7 @@ class WM_CGT_MP_modal_detection_operator(bpy.types.Operator):
         logging.info(f"{node_chain}")
         return node_chain
 
+<<<<<<< HEAD
     def setup_leveling(self):
         """ Prepara cgt_leveling.LEVELING y cgt_smoothing.CONFIG antes de
         arrancar la detección real. """
@@ -99,6 +103,8 @@ class WM_CGT_MP_modal_detection_operator(bpy.types.Operator):
         else:
             cgt_leveling.LEVELING.reset('ema')
 
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
     def get_stream(self):
         from .cgt_mp_core import cv_stream
         self.key_step = self.user.key_frame_step
@@ -143,11 +149,14 @@ class WM_CGT_MP_modal_detection_operator(bpy.types.Operator):
         else:
             self.user.modal_active = True
 
+<<<<<<< HEAD
         # nivelado de cámara: pre-escaneo silencioso para clips (valor fijo
         # desde el frame 1), EMA en vivo para webcam. Solo tiene sentido si
         # hay datos de pose (POSE u HOLISTIC); en HAND/FACE queda 'off'.
         self.setup_leveling()
 
+=======
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
         # init stream and chain
         stream = self.get_stream()
         self.node_chain = self.get_chain(stream)
@@ -251,6 +260,7 @@ class WM_CGT_MP_modal_detection_operator(bpy.types.Operator):
         return {'FINISHED'}
 
 
+<<<<<<< HEAD
 class WM_CGT_MP_leveling_diagnostic_operator(bpy.types.Operator):
     """ Estima el ángulo de corrección de nivelado e imprime el detalle en la
     consola de Blender, SIN escribir nada en el rig — para ver los números
@@ -308,4 +318,11 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(WM_CGT_MP_leveling_diagnostic_operator)
+=======
+def register():
+    bpy.utils.register_class(WM_CGT_MP_modal_detection_operator)
+
+
+def unregister():
+>>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
     bpy.utils.unregister_class(WM_CGT_MP_modal_detection_operator)
