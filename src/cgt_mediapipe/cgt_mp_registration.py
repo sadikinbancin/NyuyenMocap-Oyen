@@ -23,16 +23,12 @@ MP_ATTRS = {
     "hand_model_complexity": 1,
     "pose_model_complexity": 1,
     "holistic_model_complexity": 1,
-<<<<<<< HEAD
     "refine_face_landmarks": False,
     "debug_leveling": False,
     "manual_leveling_offset": 0.0,
     "smoothing_enabled": True,
     "smoothing_amount": 0.55,
     "foot_smoothing_amount": 0.85,
-=======
-    "refine_face_landmarks": False
->>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 }
 
 
