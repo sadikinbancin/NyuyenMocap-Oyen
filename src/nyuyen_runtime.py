@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Iterable
 
 import bpy
 from mathutils import Vector
+from .cgt_core.cgt_interface import cgt_core_panel
 
 LOG = logging.getLogger("NyuyenMocap")
 
@@ -51,13 +51,7 @@ _RUNTIME_CLASSES = []
 
 
 def sanitize_source_tree() -> int:
-    """Resolve accidental Git conflict markers by keeping the HEAD side.
-
-    The fork's current merge commit contains unresolved markers in source files.
-    Cleaning them before importing submodules prevents Blender's registration
-    from failing with SyntaxError. Files without a real <<<<<<< marker are
-    untouched.
-    """
+    """Resolve accidental Git conflict markers by keeping the HEAD side."""
     root = Path(__file__).resolve().parent
     package_root = root.parent
     changed = 0
@@ -91,12 +85,9 @@ def sanitize_source_tree() -> int:
                 keep_head = True
                 saw_end = True
                 continue
-            if not in_conflict:
-                out.append(line)
-            elif keep_head:
+            if not in_conflict or keep_head:
                 out.append(line)
 
-        # If a malformed conflict marker was encountered, do not rewrite the file.
         if in_conflict or not saw_end:
             LOG.error("Skipped malformed conflict file: %s", path)
             continue
@@ -141,7 +132,7 @@ def _remove_skeleton():
         bpy.data.armatures.remove(arm_data)
 
 
-def _pairs() -> list[tuple[str, str, str]]:
+def _pairs():
     result = []
     for bone_name, head_name, tail_name in POSE_PAIRS:
         if _world_pos(head_name) is not None and _world_pos(tail_name) is not None:
@@ -156,7 +147,7 @@ def _pairs() -> list[tuple[str, str, str]]:
     return result
 
 
-def rebuild_visual_skeleton() -> bpy.types.Object | None:
+def rebuild_visual_skeleton():
     pairs = _pairs()
     if not pairs:
         return None
@@ -210,23 +201,26 @@ def rebuild_visual_skeleton() -> bpy.types.Object | None:
         return arm_obj
     except Exception:
         LOG.exception("Unable to build visual skeleton")
-        if bpy.context.mode != 'OBJECT':
-            try:
+        try:
+            if bpy.context.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
-            except Exception:
-                pass
+        except Exception:
+            pass
         _remove_skeleton()
         return None
     finally:
-        bpy.ops.object.select_all(action='DESELECT')
-        for obj in old_selected:
-            if obj and obj.name in bpy.data.objects:
-                obj.select_set(True)
-        if old_active and old_active.name in bpy.data.objects:
-            bpy.context.view_layer.objects.active = old_active
+        try:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in old_selected:
+                if obj and obj.name in bpy.data.objects:
+                    obj.select_set(True)
+            if old_active and old_active.name in bpy.data.objects:
+                bpy.context.view_layer.objects.active = old_active
+        except Exception:
+            pass
 
 
-def set_driver_landmarks_hidden(hidden: bool = True) -> None:
+def set_driver_landmarks_hidden(hidden=True):
     root = bpy.data.collections.get("cgt_DRIVERS")
     if not root:
         return
@@ -398,7 +392,3 @@ def unregister_runtime_features():
         LOG.exception("Could not restore detection operator")
     _ORIGINAL_CANCEL = None
     _REGISTERED = False
-
-
-# Lazy import only when Blender has registered the core panel hierarchy.
-from .cgt_core.cgt_interface import cgt_core_panel
