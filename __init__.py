@@ -15,39 +15,53 @@ Copyright (C) Denys Hsu, cgtinker, cgtinker.com, hello@cgtinker.com
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
 bl_info = {
-    "name":        "BlendArMocap NX",
-    "description": "Fork/port de BlendArMocap (cgtinker) a la MediaPipe Tasks API moderna, "
-                    "para Blender 4.2+ (probado en 4.5). Mediapipe and Freemocap animation "
-                    "transfer implementation.",
-    "author":      "cgtinker (autor original) — port a Tasks API: Ivan / Claude",
-    "version":     (1, 7, 3),
-    "blender":     (4, 2, 0),
-    "location":    "3D View > Tool",
-    "doc_url":    "https://cgtinker.github.io/BlendArMocap/",
-    "tracker_url": "https://github.com/cgtinker/BlendArMocap/issues",
-    "support":     "COMMUNITY",
-    "category":    "Animation"
+    "name": "BlendArMocap NX",
+    "description": (
+        "Modern MediaPipe Tasks port of BlendArMocap with offline pose, hand and face "
+        "tracking, Rigify transfer, and an optional visual skeleton preview."
+    ),
+    "author": "cgtinker (original) — Ivan / Claude (Tasks API port)",
+    "version": (1, 8, 0),
+    "blender": (4, 2, 0),
+    "location": "3D View > Tool",
+    "doc_url": "https://cgtinker.github.io/BlendArMocap/",
+    "tracker_url": "https://github.com/sadikinbancin/NyuyenMocap-Oyen/issues",
+    "support": "COMMUNITY",
+    "category": "Animation",
 }
 
 
+def _prepare_runtime_source():
+    # The upstream fork currently contains an accidental Git merge commit with
+    # conflict markers in several source files.  Sanitize those files before
+    # importing any submodule so Blender 5.x can register the add-on cleanly.
+    from .src import nyuyen_runtime
+    nyuyen_runtime.sanitize_source_tree()
+    return nyuyen_runtime
+
+
 def reload_modules():
+    _prepare_runtime_source()
     from .src import cgt_imports
     cgt_imports.manage_imports()
 
 
 def register():
+    runtime = _prepare_runtime_source()
     from .src import cgt_registration
     cgt_registration.register()
+    runtime.register_runtime_features()
 
 
 def unregister():
-    from .src import cgt_registration
-    cgt_registration.unregister()
+    try:
+        from .src import nyuyen_runtime
+        nyuyen_runtime.unregister_runtime_features()
+    finally:
+        from .src import cgt_registration
+        cgt_registration.unregister()
 
 
 if __name__ == '__main__':
-    from src.cgt_core.cgt_utils import cgt_logging
-    # cgt_logging.init('')
     register()
