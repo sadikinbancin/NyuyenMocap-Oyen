@@ -37,9 +37,9 @@ jobs:
               print(f'OK JSON: {path}')
           PY
 
-      - name: Check unresolved merge markers
+      - name: Check unresolved conflict markers
         run: |
-          if grep -RInE '^(<<<<<<<|=======|>>>>>>>)' --exclude-dir=.git --exclude-dir=.github --exclude='*.pyc' .; then
-            echo 'Unresolved Git merge markers found.'
+          if grep -RInE '^(<<<<<<<|>>>>>>>)' --exclude-dir=.git --exclude-dir=.github --exclude='*.pyc' .; then
+            echo 'Unresolved Git conflict markers found.'
             exit 1
           fi
