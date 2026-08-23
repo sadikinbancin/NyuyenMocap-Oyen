@@ -14,3 +14,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: python tools/validate_addon.py
+      - run: python tools/validate_adapter.py
