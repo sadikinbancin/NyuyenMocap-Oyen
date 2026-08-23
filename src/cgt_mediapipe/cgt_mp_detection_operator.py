@@ -135,11 +135,22 @@ class WM_CGT_MP_modal_detection_operator(bpy.types.Operator):
             self.user.modal_active = False
             return {'FINISHED'}
 
+        # Safe adapter layer: CGT remains the source of truth.  The preview is
+        # a separate non-deforming armature driven by the original cgt_* objects.
+        # If the adapter fails, MediaPipe detection continues normally.
+        try:
+            from . import cgt_skeleton_preview
+            preview = cgt_skeleton_preview.ensure_preview(self.user.enum_detection_type)
+            if preview is None:
+                logging.warning("[CGT adapter] Skeleton preview unavailable; keeping raw CGT output active.")
+        except Exception:
+            logging.exception("[CGT adapter] Unexpected preview error; MediaPipe detection is unaffected.")
+
         wm = context.window_manager
         self._timer = wm.event_timer_add(0.0, window=context.window)
         context.window_manager.modal_handler_add(self)
         self.memo = []
-        self.report({'INFO'}, f"Running {self.user.enum_detection_type} as modal.")
+        self.report({'INFO'}, f"Running {self.user.enum_detection_type} as modal with visual skeleton preview.")
         return {'RUNNING_MODAL'}
 
     @classmethod
@@ -258,8 +269,3 @@ class WM_CGT_MP_leveling_diagnostic_operator(bpy.types.Operator):
 def register():
     bpy.utils.register_class(WM_CGT_MP_modal_detection_operator)
     bpy.utils.register_class(WM_CGT_MP_leveling_diagnostic_operator)
-
-
-def unregister():
-    bpy.utils.unregister_class(WM_CGT_MP_leveling_diagnostic_operator)
-    bpy.utils.unregister_class(WM_CGT_MP_modal_detection_operator)
