@@ -23,16 +23,12 @@ MP_ATTRS = {
     "hand_model_complexity": 1,
     "pose_model_complexity": 1,
     "holistic_model_complexity": 1,
-<<<<<<< HEAD
     "refine_face_landmarks": False,
     "debug_leveling": False,
     "manual_leveling_offset": 0.0,
     "smoothing_enabled": True,
     "smoothing_amount": 0.55,
     "foot_smoothing_amount": 0.85,
-=======
-    "refine_face_landmarks": False
->>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
 }
 
 
@@ -45,7 +41,7 @@ def save_preferences(*args):
 @bpy.app.handlers.persistent
 def load_preferences(*args):
     stored_preferences = cgt_user_prefs.get_prefs(**MP_ATTRS)
-    user = bpy.context.scene.cgtinker_mediapipe # noqa
+    user = bpy.context.scene.cgtinker_mediapipe  # noqa
     for property_name, value in stored_preferences.items():
         if not hasattr(user, property_name):
             logging.warning(f"{property_name} - not available.")
@@ -67,4 +63,3 @@ def unregister():
         if cls is None:
             continue
         cls.unregister()
-
