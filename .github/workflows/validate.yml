@@ -3,6 +3,7 @@ name: Validate addon
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   static-validation:
