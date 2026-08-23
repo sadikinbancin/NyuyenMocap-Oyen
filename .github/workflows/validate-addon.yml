@@ -1,0 +1,44 @@
+name: Validate add-on
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Python syntax
+        run: python -m compileall -q .
+
+      - name: Validate JSON data files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          for path in Path('.').rglob('*.json'):
+              with path.open('r', encoding='utf-8') as handle:
+                  json.load(handle)
+              print(f'OK JSON: {path}')
+          PY
+
+      - name: Check unresolved merge markers
+        run: |
+          if grep -RInE '^(<<<<<<<|=======|>>>>>>>)' --exclude-dir=.git --exclude='*.pyc' .; then
+            echo 'Unresolved Git merge markers found.'
+            exit 1
+          fi
