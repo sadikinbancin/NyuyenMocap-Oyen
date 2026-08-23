@@ -1,17 +1,17 @@
 """NyuyenMocap/Oyen runtime extensions.
 
-Adds a safe optional viewport skeleton preview, automatic hiding of cgt_* driver
+Adds a safe viewport skeleton preview, automatic hiding of cgt_* driver
 landmarks after detection, and a one-click Rigify transfer helper. The original
 cgt_* objects remain the real animation-transfer source.
 """
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import bpy
 from mathutils import Vector
 from .cgt_core.cgt_interface import cgt_core_panel
+from .nyuyen_adapter import discover_drivers, hide_driver_viewport
 
 LOG = logging.getLogger("NyuyenMocap")
 
@@ -20,21 +20,21 @@ SKELETON_OBJECT = "CGT_Visual_Skeleton"
 RIGIFY_CONFIG = "Rigify_Humanoid_DefaultFace_v0.6.1"
 
 POSE_PAIRS = (
-    ("pelvis", "cgt_left_hip", "cgt_right_hip"),
-    ("spine", "cgt_hip_center", "cgt_shoulder_center"),
-    ("neck", "cgt_shoulder_center", "cgt_nose"),
-    ("upper_arm.L", "cgt_left_shoulder", "cgt_left_elbow"),
-    ("forearm.L", "cgt_left_elbow", "cgt_left_wrist"),
-    ("hand.L", "cgt_left_wrist", "cgt_left_index"),
-    ("upper_arm.R", "cgt_right_shoulder", "cgt_right_elbow"),
-    ("forearm.R", "cgt_right_elbow", "cgt_right_wrist"),
-    ("hand.R", "cgt_right_wrist", "cgt_right_index"),
-    ("thigh.L", "cgt_left_hip", "cgt_left_knee"),
-    ("shin.L", "cgt_left_knee", "cgt_left_ankle"),
-    ("foot.L", "cgt_left_ankle", "cgt_left_foot_index"),
-    ("thigh.R", "cgt_right_hip", "cgt_right_knee"),
-    ("shin.R", "cgt_right_knee", "cgt_right_ankle"),
-    ("foot.R", "cgt_right_ankle", "cgt_right_foot_index"),
+    ("pelvis", ("cgt_left_hip", "cgt_hip_l", "cgt_l_hip"), ("cgt_right_hip", "cgt_hip_r", "cgt_r_hip")),
+    ("spine", ("cgt_hip_center", "cgt_mid_hip", "cgt_hip", "cgt_pelvis"), ("cgt_shoulder_center", "cgt_mid_shoulder", "cgt_neck")),
+    ("neck", ("cgt_shoulder_center", "cgt_mid_shoulder", "cgt_neck"), ("cgt_nose", "cgt_face_nose", "cgt_head")),
+    ("upper_arm.L", ("cgt_left_shoulder", "cgt_shoulder_l", "cgt_l_shoulder"), ("cgt_left_elbow", "cgt_elbow_l", "cgt_l_elbow")),
+    ("forearm.L", ("cgt_left_elbow", "cgt_elbow_l", "cgt_l_elbow"), ("cgt_left_wrist", "cgt_wrist_l", "cgt_l_wrist")),
+    ("hand.L", ("cgt_left_wrist", "cgt_wrist_l", "cgt_l_wrist"), ("cgt_left_index", "cgt_index_mcp.L", "cgt_index_mcp_left")),
+    ("upper_arm.R", ("cgt_right_shoulder", "cgt_shoulder_r", "cgt_r_shoulder"), ("cgt_right_elbow", "cgt_elbow_r", "cgt_r_elbow")),
+    ("forearm.R", ("cgt_right_elbow", "cgt_elbow_r", "cgt_r_elbow"), ("cgt_right_wrist", "cgt_wrist_r", "cgt_r_wrist")),
+    ("hand.R", ("cgt_right_wrist", "cgt_wrist_r", "cgt_r_wrist"), ("cgt_right_index", "cgt_index_mcp.R", "cgt_index_mcp_right")),
+    ("thigh.L", ("cgt_left_hip", "cgt_hip_l", "cgt_l_hip"), ("cgt_left_knee", "cgt_knee_l", "cgt_l_knee")),
+    ("shin.L", ("cgt_left_knee", "cgt_knee_l", "cgt_l_knee"), ("cgt_left_ankle", "cgt_ankle_l", "cgt_l_ankle")),
+    ("foot.L", ("cgt_left_ankle", "cgt_ankle_l", "cgt_l_ankle"), ("cgt_left_foot_index", "cgt_foot_index_l", "cgt_l_foot_index")),
+    ("thigh.R", ("cgt_right_hip", "cgt_hip_r", "cgt_r_hip"), ("cgt_right_knee", "cgt_knee_r", "cgt_r_knee")),
+    ("shin.R", ("cgt_right_knee", "cgt_knee_r", "cgt_r_knee"), ("cgt_right_ankle", "cgt_ankle_r", "cgt_r_ankle")),
+    ("foot.R", ("cgt_right_ankle", "cgt_ankle_r", "cgt_r_ankle"), ("cgt_right_foot_index", "cgt_foot_index_r", "cgt_r_foot_index")),
 )
 
 HAND_CHAINS = (
@@ -50,12 +50,19 @@ _ORIGINAL_CANCEL = None
 _RUNTIME_CLASSES = []
 
 
-def _driver(name: str):
-    return bpy.data.objects.get(name)
+def _driver(candidates):
+    """Resolve a driver by aliases without assuming one exact cgt_* naming scheme."""
+    if isinstance(candidates, str):
+        candidates = (candidates,)
+    for name in candidates:
+        obj = bpy.data.objects.get(name)
+        if obj is not None:
+            return obj
+    return None
 
 
-def _world_pos(name: str):
-    obj = _driver(name)
+def _world_pos(candidates):
+    obj = _driver(candidates)
     return obj.matrix_world.translation.copy() if obj else None
 
 
@@ -76,23 +83,16 @@ def _remove_skeleton():
             collection.children.unlink(child)
             bpy.data.collections.remove(child)
         bpy.data.collections.remove(collection)
-    arm_data = bpy.data.armatures.get(SKELETON_OBJECT)
+    arm_data = bpy.data.armatures.get(SKELETON_OBJECT + "_DATA")
     if arm_data and arm_data.users == 0:
         bpy.data.armatures.remove(arm_data)
 
 
 def _pairs():
     result = []
-    for bone_name, head_name, tail_name in POSE_PAIRS:
-        if _world_pos(head_name) is not None and _world_pos(tail_name) is not None:
-            result.append((bone_name, head_name, tail_name))
-    for side in ("L", "R"):
-        for label, chain in HAND_CHAINS:
-            for idx in range(len(chain) - 1):
-                head = f"cgt_{chain[idx]}.{side}"
-                tail = f"cgt_{chain[idx + 1]}.{side}"
-                if _world_pos(head) is not None and _world_pos(tail) is not None:
-                    result.append((f"{label}.{side}.{idx + 1}", head, tail))
+    for bone_name, head_names, tail_names in POSE_PAIRS:
+        if _world_pos(head_names) is not None and _world_pos(tail_names) is not None:
+            result.append((bone_name, head_names, tail_names))
     return result
 
 
@@ -103,7 +103,7 @@ def rebuild_visual_skeleton():
 
     _remove_skeleton()
     collection = _ensure_collection()
-    arm_data = bpy.data.armatures.new(SKELETON_OBJECT)
+    arm_data = bpy.data.armatures.new(SKELETON_OBJECT + "_DATA")
     arm_data.display_type = 'OCTAHEDRAL'
     arm_obj = bpy.data.objects.new(SKELETON_OBJECT, arm_data)
     arm_obj.show_in_front = True
@@ -120,9 +120,9 @@ def rebuild_visual_skeleton():
         bpy.ops.object.mode_set(mode='EDIT')
 
         created = []
-        for bone_name, head_name, tail_name in pairs:
-            head = _world_pos(head_name)
-            tail = _world_pos(tail_name)
+        for bone_name, head_names, tail_names in pairs:
+            head = _world_pos(head_names)
+            tail = _world_pos(tail_names)
             if head is None or tail is None:
                 continue
             if (tail - head).length < 1e-5:
@@ -131,13 +131,13 @@ def rebuild_visual_skeleton():
             bone.head = head
             bone.tail = tail
             bone.use_deform = False
-            created.append((bone.name, head_name, tail_name))
+            created.append((bone.name, head_names, tail_names))
 
         bpy.ops.object.mode_set(mode='POSE')
-        for bone_name, head_name, tail_name in created:
+        for bone_name, head_names, tail_names in created:
             pose_bone = arm_obj.pose.bones.get(bone_name)
-            head_driver = _driver(head_name)
-            tail_driver = _driver(tail_name)
+            head_driver = _driver(head_names)
+            tail_driver = _driver(tail_names)
             if not pose_bone or not head_driver or not tail_driver:
                 continue
 
@@ -179,16 +179,10 @@ def rebuild_visual_skeleton():
 
 
 def set_driver_landmarks_hidden(hidden=True):
-    root = bpy.data.collections.get("cgt_DRIVERS")
-    if not root:
-        return
-    for obj in root.all_objects:
-        if obj.name == SKELETON_OBJECT:
-            continue
-        try:
-            obj.hide_set(hidden)
-        except RuntimeError:
-            obj.hide_viewport = hidden
+    try:
+        hide_driver_viewport(hidden)
+    except Exception:
+        LOG.exception("Could not change cgt_* viewport visibility")
 
 
 def _post_detection(context):
@@ -245,7 +239,7 @@ class NYU_OT_RebuildSkeleton(bpy.types.Operator):
     def execute(self, context):
         skeleton = rebuild_visual_skeleton()
         if skeleton is None:
-            self.report({'WARNING'}, "No cgt_* body/hand drivers found. Run detection first.")
+            self.report({'WARNING'}, "No compatible cgt_* body drivers found. Run detection first.")
             return {'CANCELLED'}
         set_driver_landmarks_hidden(True)
         return {'FINISHED'}
@@ -278,10 +272,7 @@ class NYU_OT_AutoTransfer(bpy.types.Operator):
             self.report({'ERROR'}, "Switch to Object Mode first.")
             return {'CANCELLED'}
 
-        rigs = [
-            o for o in context.selected_objects
-            if o.type == 'ARMATURE' and o.name != SKELETON_OBJECT
-        ]
+        rigs = [o for o in context.selected_objects if o.type == 'ARMATURE' and o.name != SKELETON_OBJECT]
         if len(rigs) != 1:
             self.report({'ERROR'}, "Select exactly one generated Rigify armature (Oyen).")
             return {'CANCELLED'}
@@ -335,13 +326,7 @@ def register_runtime_features():
     if _REGISTERED:
         return
     _wrap_detection_cancel()
-    classes = [
-        NYU_OT_RebuildSkeleton,
-        NYU_OT_ShowLandmarks,
-        NYU_OT_HideLandmarks,
-        NYU_OT_AutoTransfer,
-        NYU_PT_Runtime,
-    ]
+    classes = [NYU_OT_RebuildSkeleton, NYU_OT_ShowLandmarks, NYU_OT_HideLandmarks, NYU_OT_AutoTransfer, NYU_PT_Runtime]
     for cls in classes:
         bpy.utils.register_class(cls)
         _RUNTIME_CLASSES.append(cls)
