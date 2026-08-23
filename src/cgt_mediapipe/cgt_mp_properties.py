@@ -21,27 +21,22 @@ class MP_PG_Properties(bpy.types.PropertyGroup):
                     "around the irises by applying the Attention Mesh Model. "
                     "Default to false.")
 
-    # downloading during session seem inappropriate (therefor max 1)
     holistic_model_complexity: bpy.props.IntProperty(
         name="Model Complexity", default=1, min=0, max=1,
-        description="Complexity of the pose landmark model: "
-                    "0, 1 or 1. Landmark accuracy as well as inference "
-                    "latency generally go up with the model complexity. "
+        description="Complexity of the pose landmark model: 0 or 1. Landmark "
+                    "accuracy and inference latency generally increase with model complexity. "
                     "Default to 1.")
 
-    # downloading during session seem inappropriate (therefor max 1)
     pose_model_complexity: bpy.props.IntProperty(
         name="Model Complexity", default=1, min=0, max=1,
-        description="Complexity of the pose landmark model: "
-                    "0, 1 or 1. Landmark accuracy as well as inference "
-                    "latency generally go up with the model complexity. "
+        description="Complexity of the pose landmark model: 0 or 1. Landmark "
+                    "accuracy and inference latency generally increase with model complexity. "
                     "Default to 1.")
 
     hand_model_complexity: bpy.props.IntProperty(
         name="Model Complexity", default=1, min=0, max=1,
-        description="Complexity of the hand landmark model: "
-                    "0 or 1. Landmark accuracy as well as inference "
-                    "latency generally go up with the model complexity. "
+        description="Complexity of the hand landmark model: 0 or 1. Landmark "
+                    "accuracy and inference latency generally increase with model complexity. "
                     "Default to 1.")
 
     min_detection_confidence: bpy.props.FloatProperty(
@@ -111,20 +106,15 @@ class MP_PG_Properties(bpy.types.PropertyGroup):
         default=False
     )
 
-<<<<<<< HEAD
     debug_leveling: bpy.props.BoolProperty(
         name="Debug Leveling",
-        description="Imprime en la consola de Blender el ángulo de corrección "
-                    "de nivelado de cámara detectado en cada muestra.",
+        description="Print the detected camera-level correction angle in Blender console.",
         default=False
     )
 
     manual_leveling_offset: bpy.props.FloatProperty(
         name="Ajuste manual (grados)",
-        description="Corrección adicional que se suma DESPUÉS del nivelado "
-                    "automático, por si el resultado sigue ligeramente inclinado. "
-                    "Rota el point cloud sobre el eje de vista (Y) — ajustar hasta "
-                    "que el personaje quede recto.",
+        description="Additional camera leveling correction applied after automatic leveling.",
         default=0.0,
         min=-45.0,
         max=45.0,
@@ -133,28 +123,22 @@ class MP_PG_Properties(bpy.types.PropertyGroup):
 
     smoothing_enabled: bpy.props.BoolProperty(
         name="Suavizar Jitter",
-        description="Aplica un filtro One Euro a los landmarks de pose para "
-                    "reducir el temblor, sobre todo en pies y raíz del torso.",
+        description="Apply landmark smoothing to reduce pose jitter.",
         default=True
     )
 
     smoothing_amount: bpy.props.FloatProperty(
         name="Suavizado general",
-        description="Fuerza del suavizado para brazos/piernas en general. "
-                    "Más alto = menos jitter pero más lag en movimientos rápidos.",
+        description="General smoothing strength. Higher values reduce jitter but add latency.",
         default=0.55, min=0.0, max=1.0, subtype='FACTOR'
     )
 
     foot_smoothing_amount: bpy.props.FloatProperty(
         name="Suavizado de pies/raíz",
-        description="Fuerza extra de suavizado para tobillos, talones, punta de "
-                    "pie, hombros y caderas — donde más se nota el jitter y donde "
-                    "el pie debería quedarse quieto al estar apoyado en el piso.",
+        description="Extra smoothing for feet/root landmarks.",
         default=0.85, min=0.0, max=1.0, subtype='FACTOR'
     )
 
-=======
->>>>>>> 3cd40c352ef1d842c922acb72229314f99bffddc
     local_user: bpy.props.BoolProperty(
         name="Local user",
         description="Install to local user and not to blenders python site packages.",
